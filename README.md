@@ -9,6 +9,6 @@ packages and dependencies handled by conda
 
 `conda install --file requirements.txt`
 
-`python -m ipykernel install --user -name=coastal-classification`
+`python -m ipykernel install --user --name=coastal-classification`
 
 `jupyter notebook`
