@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 # This script contains the functions to generate composite imagery from 
-# Sentinel, Landsat and ALOS PALSAR datasets using Google Earth Engine
+# Sentinel and Landsat datasets using Google Earth Engine
 # for the classification of coastal zones in New Zealand.
-# Options to export to google drive or locally. 
+# Options to export to google drive. 
 
 # import modules
 from cmath import nan
@@ -26,24 +26,6 @@ import json
 import tqdm
 import math
 import io 
-import requests
-
-import folium
-
-def add_ee_layer(self, ee_image_object, vis_params, name):
-    """Adds a method for displaying Earth Engine image tiles to folium map."""
-    map_id_dict = ee.Image(ee_image_object).getMapId(vis_params)
-    folium.raster_layers.TileLayer(
-        tiles=map_id_dict['tile_fetcher'].url_format,
-        attr='Map Data &copy; <a href="https://earthengine.google.com/">Google Earth Engine</a>',
-        name=name,
-        overlay=True,
-        control=True
-    ).add_to(self)
-
-# Add Earth Engine drawing method to folium.
-folium.Map.add_ee_layer = add_ee_layer
-
 
 # Initialize GEE
 ee.Initialize()
@@ -55,15 +37,13 @@ img_bands = {'S2': ['B2', 'B3', 'B4', 'B5', 'B6', 'B7','B8', 'B8A', 'B11', 'B12'
         'LS7_sr': ['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B7'],
         'LS8': ['B2', 'B3', 'B4', 'B5', 'B6', 'B7'],
         'LS8_sr': ['SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B6', 'SR_B7'],
-        'S1': ['HH', 'HV', 'VV', 'VH', 'angle'],
-        'ALOS': ['HH', 'HV', 'angle']}
+        'S1': ['HH', 'HV', 'VV', 'VH', 'angle']}
 
 # dict containing sensor GEE snippets for optical collections store SR and TOA collections as list
 sensor_id = {'S2': ['COPERNICUS/S2_SR', 'COPERNICUS/S2'],
         'LS7': ['LANDSAT/LE07/C02/T1_L2', 'LANDSAT/LE07/C02/T1_TOA'],
         'LS8': ['LANDSAT/LC08/C02/T1_L2', 'LANDSAT/LC08/C02/T1_TOA'],
-        'S1': ['COPERNICUS/S1_GRD'],
-        'ALOS': ['JAXA/ALOS/PALSAR/YEARLY/SAR']} 
+        'S1': ['COPERNICUS/S1_GRD']} 
 
 # list of band names
 band_names = ['blue', 'green', 'red', 'RE1', 'RE2', 'RE3', 'NIR', 'RE4', 'SWIR1', 'SWIR2']
@@ -504,10 +484,6 @@ def create_optical_composite(year, region_shp, sensor, crs, pixel_size, save_out
                 .map(apply_scale_factors) \
                 .map(rename_img_bands('LS8_sr')) 
 
-    """img = sr_image_collection_cm.first()
-    band_names = img.bandNames()
-    print('Band names:', band_names.getInfo())"""
-    
     # generate indices for image_collections
     toa_image_collection_indices = ee.ImageCollection(toa_image_collection_cm) \
         .map(apply_ndwi) \
@@ -548,20 +524,6 @@ def create_optical_composite(year, region_shp, sensor, crs, pixel_size, save_out
     # clip composite_image for export
     clip = composite_image.clip(roi)
     
-    # Create a map.
-    lat, lon = -36.8509, 174.7645
-    my_map = folium.Map(location=[lat, lon], zoom_start=7)
-
-    # Add the land cover to the map object.
-    #my_map.add_ee_layer(composite_image, {}, name='image')
-    my_map.add_ee_layer(clip, {'bands': ['red_p15', 'green_p15', 'blue_p15']}, name='clip')
-
-    # Add a layer control panel to the map.
-    my_map.add_child(folium.LayerControl())
-
-    # Display the map.
-    my_map.save('map.html')
-
     # export composite image to google drive if local folder not specified
     # if down_folder is None set google drive dir name to year 
     if down_folder == None:
