@@ -557,7 +557,7 @@ def create_optical_composite(year, region_shp, sensor, crs, pixel_size, save_out
     # run download task
     run_task(task, 2)
 
-def create_sar_composite(year, region_shp, sensor, crs, pixel_size, save_outputs_local=None, down_folder=None):
+def create_sar_composite(year, region_shp, sensor, crs, pixel_size, save_outputs_local=None, down_folder=None, file_name_prefix=None):
     """
     function to generate and download annual sar composite imagery from GEE for pixel-based coastal classification 
     and change detection
@@ -572,6 +572,7 @@ def create_sar_composite(year, region_shp, sensor, crs, pixel_size, save_outputs
     save_output_local - if region is < Xkm2 outputs can be saved locally by specifying the local file path otherwise default is None
                         and outputs will be saved to users google drive accoun
     down_folder - string stating name of google drive to download image to if None will name folder by year 
+    file_name_prefix - string, if working with multiple locations specify a three character prefix e.g. 'AUK'
     
     returns
     composite image as a GeoTiff to specified local folder or to google drive
@@ -585,7 +586,7 @@ def create_sar_composite(year, region_shp, sensor, crs, pixel_size, save_outputs
             raise ValueError(sensor + ' is not compatible, must be S1.')
 
     print("Generating composite image for {} for {}".format(sensor, year))
-    
+
     # convert region to ee.featureCollection 
     roi = shp_to_featureCollection(region_shp)
 
