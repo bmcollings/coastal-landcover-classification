@@ -31,6 +31,9 @@ import io
 ee.Initialize()
 
 # define global variables
+# define valid sensors
+valid_optical_sensors = {'S2', 'LS7', 'LS8'}
+valid_sar_sensors = {'S1'}
 # dict containing sensor image bands 
 img_bands = {'S2': ['B2', 'B3', 'B4', 'B5', 'B6', 'B7','B8', 'B8A', 'B11', 'B12'],
         'LS7': ['B1', 'B2', 'B3', 'B4', 'B5', 'B7'],
@@ -332,8 +335,15 @@ def shp_to_featureCollection(shapefile):
     
     Returns
     ee.FeatureCollection object"""
-    # read shapefile as gdf and convert to json_dict
+    # read shapefile as gdf
     gdf = gpd.read_file(shapefile)
+
+    # raise error if gdf is not LineString or Polygon
+    valid_geometry = {'LineString','Polygon'}
+    if gdf.geom_type[0] not in valid_geometry:
+        raise ValueError('Shapefile must be LineString or Polygon.')
+
+    #convert to json_dict
     if gdf.geom_type[0] == 'LineString':
         #gdf = gdf.buffer(1500)
         gdf = gdf.to_crs(4326)
@@ -350,8 +360,6 @@ def shp_to_featureCollection(shapefile):
             features.append(line.buffer(1500))
         if feature['geometry']['type'] == 'Polygon':
             features.append(ee.Feature(ee.Geometry.Polygon(feature['geometry']['coordinates'])))
-        if feature['geometry']['type'] == 'Point':
-            features.append(ee.Feature(ee.Geometry.Point(feature['geometry']['coordinates'])))
 
 
     return ee.FeatureCollection(features)
@@ -411,6 +419,12 @@ def create_optical_composite(year, region_shp, sensor, crs, pixel_size, save_out
     # define date ranges 
     start_date = str(year) + '-01-01'
     end_date = str(year + 1) + '-01-01'
+
+    # raise error if sensor isn't compatible
+    if sensor not in valid_optical_sensors:
+            raise ValueError(sensor + ' is not compatible, must be S2, LS7 or LS8.')
+    
+    print("Generating composite image for {} for {}".format(sensor, year))
 
     # convert region to ee.featureCollection 
     roi = shp_to_featureCollection(region_shp)
@@ -494,14 +508,12 @@ def create_optical_composite(year, region_shp, sensor, crs, pixel_size, save_out
     
     # reduce sr_collection to generate optical composite bands
     # select bands names for S2 or LS
-    print(sensor)
     if sensor == 'S2':
         b_names = band_names
     if sensor == 'LS7':
         b_names =  band_names[:3] + band_names[6:7] + band_names[8:9]
     if sensor == 'LS8':
         b_names =  band_names[:3] + band_names[6:7] + band_names[8:10]
-    print(b_names)
     # derive p15 composite bands for optical bands
     image_bands = sr_image_collection_indices.select(b_names)
     p15_image = image_bands.reduce(ee.Reducer.percentile([15]))
@@ -568,6 +580,12 @@ def create_sar_composite(year, region_shp, sensor, crs, pixel_size, save_outputs
     start_date = str(year) + '-01-01'
     end_date = str(year + 1) + '-01-01'
 
+    # raise error if sensor isn't compatible
+    if sensor not in valid_sar_sensors:
+            raise ValueError(sensor + ' is not compatible, must be S1.')
+
+    print("Generating composite image for {} for {}".format(sensor, year))
+    
     # convert region to ee.featureCollection 
     roi = shp_to_featureCollection(region_shp)
 
