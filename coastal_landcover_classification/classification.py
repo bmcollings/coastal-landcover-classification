@@ -458,6 +458,8 @@ def classify_random_forest(input_image_list, input_training_images, training_fol
         imageutils.gen_valid_mask(img, roi, 'KEA', -99)
         rsgislib.classification.classsklearn.apply_sklearn_classifier(training, optimal_params, roi, 1, imgInfo, outName, gdalformat='KEA')  
         print('classified ' + img)
+    # remove ROI
+    os.remove(roi)
 
 # define function to merge classes from folder
 def merge(folder, output_format='KEA', exclude_intertidal_rule=False):
@@ -497,7 +499,11 @@ def merge(folder, output_format='KEA', exclude_intertidal_rule=False):
     bandDefns.append(rsgislib.imagecalc.BandDefn('urban', urban[0], 1))
 
     # bandmath to merge classes
-    fnl_cls_img = os.path.join(folder, 'classification_output.kea')
+    if output_format == 'KEA':
+        file_name = 'classification_output.kea'
+    if output_format == 'GTIFF':
+        file_name = 'classification_output.tif'
+    fnl_cls_img = os.path.join(folder, file_name)
     
     rsgislib.imagecalc.band_math(fnl_cls_img, exp, output_format, rsgislib.TYPE_8UINT, bandDefns)
     rsgislib.rastergis.pop_rat_img_stats(fnl_cls_img, add_clr_tab=True, calc_pyramids=True, ignore_zero=True)

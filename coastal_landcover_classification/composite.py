@@ -101,15 +101,14 @@ def set_nodata_val(image, no_data_val):
         ds.GetRasterBand(i + 1).SetNoDataValue(no_data_val)
 
 
-def mosaic(inputImageList, nodataVal=-99, outputFormat='KEA', dataType=rsgislib.TYPE_32FLOAT):
+def mosaic(inputImageList, output_image, nodataVal=-99, outputFormat='KEA', dataType=rsgislib.TYPE_32FLOAT):
     """
     function to moasaic group of images in specified folder and populate image with statistics
 
     Args
 
     inputImageList - list of images to be mosaiced
-    outputImage - str, output mosaic
-    inputFormat - str, gdal format of input images default=kea
+    output_image - str, file path for output image
     nodataVal - float, output no data value
     innodataVal - float, no data value for input images
     band - int, input image band to get no data value from
@@ -125,15 +124,14 @@ def mosaic(inputImageList, nodataVal=-99, outputFormat='KEA', dataType=rsgislib.
     # get band names
     bandNames = rsgislib.imageutils.get_band_names(inputImageList[0])
     print(bandNames)
-    outputImage = inputImageList[0][:2] + '-composite.kea'
     # define reamaining args
     overlapBehaviour = 0   
     skipBand = 1
     # mosaic with imageutils.createImageMosaic and populate image stats
     innodataVal = nodataVal
-    rsgislib.imageutils.create_img_mosaic(inputImageList, outputImage, nodataVal, innodataVal, skipBand, overlapBehaviour, outputFormat, dataType)
-    rsgislib.imageutils.set_band_names(outputImage, bandNames)
-    set_nodata_val(outputImage, nodataVal)
+    rsgislib.imageutils.create_img_mosaic(inputImageList, output_image, nodataVal, innodataVal, skipBand, overlapBehaviour, outputFormat, dataType)
+    rsgislib.imageutils.set_band_names(output_image, bandNames)
+    set_nodata_val(output_image, nodataVal)
     
 
 
