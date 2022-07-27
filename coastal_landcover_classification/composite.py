@@ -26,6 +26,7 @@ import json
 import tqdm
 import math
 import io 
+import requests
 
 # Initialize GEE
 ee.Initialize()
@@ -389,9 +390,48 @@ def run_task(task, mins):
     while task.active():
         print(task.status())
         time.sleep(secs)
-    
 
-def create_optical_composite(year, region_shp, sensor, crs, pixel_size, save_outputs_local=None, use_toa=True, down_folder=None, file_name_prefix=None):
+def download_img_local(ee_image, folder, name, region, crs, scale, format='GEO_TIFF'):
+    """
+    function to get download url from ee.Image
+    
+    Args
+    ee_image - ee.Image object
+    folder - local folder name to save image to
+    name - file_name
+    region - extent of image
+    scale - output_resolution
+    format - image format default GEO_TIFF
+
+    Returns
+    image downloaded to local folder specified
+    """
+    
+    # get bandnames
+    bands = ee_image.bandNames().getInfo()
+    print(bands)
+    # define url
+    url = ee_image.getDownloadUrl({
+        'bands': bands,
+        'region': region,
+        'crs': crs,
+        'scale': scale,
+        'format': format
+    })
+    # join folder and file name
+    down_path =os.path.join(folder, name)
+    # get url 
+    response = requests.get(url)
+    # download file 
+    with open(down_path, 'wb') as fd:
+        fd.write(response.content)
+    # set bandnames and nodata val
+    rsgislib.imageutils.set_band_names(down_path, bands)
+    set_nodata_val(down_path, -99)
+
+
+
+def create_optical_composite(year, region_shp, sensor, crs, pixel_size, use_toa=True, down_folder=None, file_name_prefix=None):
     """
     function to generate and download annual composite imagery from GEE for pixel-based coastal classification 
     and change detection
@@ -540,22 +580,34 @@ def create_optical_composite(year, region_shp, sensor, crs, pixel_size, save_out
         dir =  str(year)
     else:
         dir = down_folder
-
-    task = ee.batch.Export.image.toDrive(image=clip.toFloat(),
-        region=roi.geometry(),
-        description='export_' + sensor + '_' + str(year),
-        folder=dir,
-        fileNamePrefix=sensor + '-' + str(year),
-        scale=pixel_size,
-        crs=crs,
-        maxPixels=1e13,
-        skipEmptyTiles=True
-    )
     
-    # run download task
-    run_task(task, 2)
+    if file_name_prefix == None:
+        file_name = sensor + '-' + str(year)
+    else:
+        file_name = file_name_prefix + '-' + sensor + '-' + str(year)
 
-def create_sar_composite(year, region_shp, sensor, crs, pixel_size, save_outputs_local=None, down_folder=None, file_name_prefix=None):
+    # if down_folder exists download image locally
+    if os.path.exists(down_folder) == True:
+        file_name = file_name + '.tif'
+        download_img_local(clip.toFloat(), down_folder, file_name, roi.geometry(), crs, pixel_size)
+    # if down_folder doesn't exist locally download to drive
+    else:
+        task = ee.batch.Export.image.toDrive(image=clip.toFloat(),
+            region=roi.geometry(),
+            description='export_' + sensor + '_' + str(year),
+            folder=dir,
+            fileNamePrefix=file_name,
+            scale=pixel_size,
+            crs=crs,
+            maxPixels=1e13,
+            skipEmptyTiles=True
+        )
+        # run download task
+        run_task(task, 2)
+    
+    
+
+def create_sar_composite(year, region_shp, sensor, crs, pixel_size, down_folder=None, file_name_prefix=None):
     """
     function to generate and download annual sar composite imagery from GEE for pixel-based coastal classification 
     and change detection
@@ -569,7 +621,7 @@ def create_sar_composite(year, region_shp, sensor, crs, pixel_size, save_outputs
     pixel_size - output resolution of composite image
     save_output_local - if region is < Xkm2 outputs can be saved locally by specifying the local file path otherwise default is None
                         and outputs will be saved to users google drive accoun
-    down_folder - string stating name of google drive to download image to if None will name folder by year 
+    down_folder - string stating name of google drive or local file path to folder to download image to if None will name folder by year 
     file_name_prefix - string, if working with multiple locations specify a three character prefix e.g. 'AUK'
     
     returns
@@ -637,19 +689,23 @@ def create_sar_composite(year, region_shp, sensor, crs, pixel_size, save_outputs
     else:
         file_name = file_name_prefix + '-' + sensor + '-' + str(year)
 
-    task = ee.batch.Export.image.toDrive(image=clip.toFloat(),
-        region=roi.geometry(),
-        description='export_' + sensor + '_' + str(year),
-        folder=dir,
-        fileNamePrefix= file_name,
-        scale=pixel_size,
-        crs=crs,
-        maxPixels=1e13,
-        skipEmptyTiles=True
-    )
-    
-    # run download task
-    run_task(task, 2)
+    # if down_folder exists download image locally
+    if os.path.exists(down_folder) == True:
+        download_img_local(clip.toFloat(), down_folder, file_name, roi.geometry(), pixel_size)
+    # if down_folder doesn't exist locally download to drive
+    else:
+        task = ee.batch.Export.image.toDrive(image=clip.toFloat(),
+            region=roi.geometry(),
+            description='export_' + sensor + '_' + str(year),
+            folder=dir,
+            fileNamePrefix=file_name,
+            scale=pixel_size,
+            crs=crs,
+            maxPixels=1e13,
+            skipEmptyTiles=True
+        )
+        # run download task
+        run_task(task, 2)
 
     
 
