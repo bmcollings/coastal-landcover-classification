@@ -45,6 +45,7 @@ img_bands = {'S2': ['B2', 'B3', 'B4', 'B5', 'B6', 'B7','B8', 'B8A', 'B11', 'B12'
 
 # dict containing sensor GEE snippets for optical collections store SR and TOA collections as list
 sensor_id = {'S2': ['COPERNICUS/S2_SR', 'COPERNICUS/S2'],
+        'LS5': ['LANDSAT/LT05/C02/T1_L2', 'LANDSAT/LT05/C02/T1_TOA'],
         'LS7': ['LANDSAT/LE07/C02/T1_L2', 'LANDSAT/LE07/C02/T1_TOA'],
         'LS8': ['LANDSAT/LC08/C02/T1_L2', 'LANDSAT/LC08/C02/T1_TOA'],
         'S1': ['COPERNICUS/S1_GRD']} 
@@ -504,7 +505,7 @@ def create_optical_composite(year, region_shp, sensor, crs, pixel_size, use_toa=
             .map(mask_clouds_S2_QA60) \
             .map(rename_img_bands(sensor))        
     
-    if sensor == 'LS7':
+    if sensor == 'LS7' or 'LS5':
         # LS_sr bands required 
         sr_image_collection_cm = ee.ImageCollection(sr_image_collection) \
             .map(mask_clouds_LS_qa) \
@@ -548,7 +549,7 @@ def create_optical_composite(year, region_shp, sensor, crs, pixel_size, use_toa=
     # select bands names for S2 or LS
     if sensor == 'S2':
         b_names = band_names
-    if sensor == 'LS7':
+    if sensor == 'LS7' or 'LS5':
         b_names =  band_names[:3] + band_names[6:7] + band_names[8:9]
     if sensor == 'LS8':
         b_names =  band_names[:3] + band_names[6:7] + band_names[8:10]
