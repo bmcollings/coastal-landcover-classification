@@ -480,7 +480,7 @@ def create_optical_composite(year, region_shp, sensor, crs, pixel_size, use_toa=
     else:
         sr_image_collection = toa_image_collection
     
-    if sensor == 'S2' and year <= 2017:
+    if sensor == 'S2' and year <= 2019:
         sr_image_collection = toa_image_collection
     
     # perform cloud masking based on sensor type
