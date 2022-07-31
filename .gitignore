@@ -8,6 +8,7 @@ test_composite.py
 ### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
+coastal_landcover_classification/__pycache__/
 *.py[cod]
 *$py.class
 
