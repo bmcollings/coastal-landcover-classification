@@ -33,10 +33,12 @@ ee.Initialize()
 
 # define global variables
 # define valid sensors
-valid_optical_sensors = {'S2', 'LS7', 'LS8'}
+valid_optical_sensors = {'S2', 'LS5', 'LS7', 'LS8'}
 valid_sar_sensors = {'S1'}
 # dict containing sensor image bands 
 img_bands = {'S2': ['B2', 'B3', 'B4', 'B5', 'B6', 'B7','B8', 'B8A', 'B11', 'B12'],
+        'LS5': ['B1', 'B2', 'B3', 'B4', 'B5', 'B7'],
+        'LS5_sr': ['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B7'],
         'LS7': ['B1', 'B2', 'B3', 'B4', 'B5', 'B7'],
         'LS7_sr': ['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B7'],
         'LS8': ['B2', 'B3', 'B4', 'B5', 'B6', 'B7'],
@@ -428,7 +430,6 @@ def download_img_local(ee_image, folder, name, region, crs, scale, format='GEO_T
         fd.write(response.content)
     # set bandnames and nodata val
     rsgislib.imageutils.set_band_names(down_path, bands)
-    set_nodata_val(down_path, -99)
 
 
 
@@ -461,7 +462,7 @@ def create_optical_composite(year, region_shp, sensor, crs, pixel_size, use_toa=
 
     # raise error if sensor isn't compatible
     if sensor not in valid_optical_sensors:
-            raise ValueError(sensor + ' is not compatible, must be S2, LS7 or LS8.')
+            raise ValueError(sensor + ' is not compatible, must be S2, LS5, LS7 or LS8.')
     
     print("Generating composite image for {} for {}".format(sensor, year))
 
@@ -505,7 +506,7 @@ def create_optical_composite(year, region_shp, sensor, crs, pixel_size, use_toa=
             .map(mask_clouds_S2_QA60) \
             .map(rename_img_bands(sensor))        
     
-    if sensor == 'LS7' or 'LS5':
+    if sensor == 'LS7' or sensor == 'LS5':
         # LS_sr bands required 
         sr_image_collection_cm = ee.ImageCollection(sr_image_collection) \
             .map(mask_clouds_LS_qa) \
