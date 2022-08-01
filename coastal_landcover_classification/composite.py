@@ -550,7 +550,7 @@ def create_optical_composite(year, region_shp, sensor, crs, pixel_size, use_toa=
     # select bands names for S2 or LS
     if sensor == 'S2':
         b_names = band_names
-    if sensor == 'LS7' or 'LS5':
+    if sensor == 'LS7' or sensor == 'LS5':
         b_names =  band_names[:3] + band_names[6:7] + band_names[8:9]
     if sensor == 'LS8':
         b_names =  band_names[:3] + band_names[6:7] + band_names[8:10]
